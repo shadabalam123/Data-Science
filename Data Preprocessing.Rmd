@@ -1,0 +1,158 @@
+---
+title: "Data Prprocessing"
+author: "Shadab Alam"
+date: "1/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Importing the dataset Cars
+cars2=read.csv("C:/Users/shada/Downloads/DMPA_data_sets/Data sets/cars2.txt",stringsAsFactors = FALSE)
+head(cars2)
+
+```
+
+```{r}
+# Missing Data
+# Look at the four variables from cars
+cars2.4var=cars2[,c(1,3,4,8)]
+head(cars2.4var)
+# Make certain entries missing
+cars2.4var[2,2]=NA
+cars2.4var[4,4]=NA
+head(cars2.4var)
+#There are four ways to deal with missing values
+# 1.Replace missing values with constants
+cars2.4var[2,2]<-0
+cars2.4var[4,4]="Missing"
+head(cars2.4var)
+# 2.Replace values with mean and mode
+cars2.4var[2,2]=mean(na.omit(cars2.4var$cubicinches))
+our_table=table(cars2.4var$brand)
+our_mode=names(our_table)[our_table==max(our_table)]
+cars2.4var[4,4]=our_mode
+head(cars2.4var)
+# 3.Generate Random observations
+obs_brand=sample(na.omit(cars2.4var$brand),1)
+obs_cubicinches=sample(na.omit(cars2.4var$cubicinches),1)
+cars2.4var[2,2]=obs_cubicinches
+cars2.4var[4,4]=obs_brand
+head(cars2.4var)
+```
+
+```{r}
+# Create Histogram
+#Set up the plot area
+par(mfrow=c(1,1))
+# Create the histogram bars
+hist(cars2$weightlbs,breaks=30,xlim=c(0,5000),col="blue",border="black",ylim=c(0,40),xlab="weights",ylab="coounts",main="Histogram of Cars Weights")
+# Make a box around the plot
+box(which="plot",lty="solid",col="black")
+
+```
+
+```{r}
+# Create a Scatterplot
+plot(cars2$weightlbs,cars2$mpg,xlim = c(0,5000),ylim=c(0,600),xlab = "Weight",ylab="MPG",main="Scatterplot of MPG by Weight",type="p",pch="16",col="blue")
+# Add open black
+# Circles
+points(cars2$weightlbs,cars2$mpg,type="p",col="black")
+
+```
+
+```{r}
+# Descriptive Statistics
+mean(cars2$weightlbs) #Mean
+median(cars2$weightlbs) #Median
+length(cars2$weightlbs) #No of observation
+sd(cars2$weightlbs) #standard deviation
+summary(cars2$weightlbs)
+   
+
+```
+
+```{r}
+#Transformation
+# There are three ways to tranform the data
+# 1.Min-max normalization
+summary(cars2$weightlbs)
+mi=min(cars2$weightlbs)
+ma=max(cars2$weightlbs)
+minmax.weight=(cars2$weightlbs-mi)/(ma-mi)
+minmax.weight
+# 2.Z-score standardization
+m=mean(cars2$weightlbs)
+s=sd(cars2$weightlbs)
+z.weight=(cars2$weightlbs-m)/s
+z.weight
+length(cars2$weightlbs)
+# 3.Decimal Scaling
+max(abs(cars2$weight)) # 4 digits
+d.weight=cars2$weightlbs/(10^4)
+d.weight
+
+```
+
+```{r}
+# Side by side Histograms
+par(mfrow=c(1,2))
+# Create two histograms
+hist(cars2$weightlbs,breaks=20,xlim=c(1000,5000),main="Histogram of weight",xlab="Weights",ylab="Counts")
+box(which="plot",lty = "solid",col="black")
+hist(z.weight,breaks = 20,xlim=c(-2,3),main="Histogram of Z-score of Weight",xlab="Z-score of Weight",ylab="counts")
+box(which="plot",lty = "solid",col="black")
+```
+
+```{r}
+#Skewness
+(3*(mean(cars2$weightlbs)-median(cars2$weightlbs)))/sd(cars2$weightlbs)
+(3*(mean(z.weight)-median(z.weight)))/sd(z.weight)
+```
+
+```{r}
+# Transformations for Normality
+sqrt.weight=sqrt(cars2$weightlbs) #Square root
+sqrt.weight_skew=(3*(mean(sqrt.weight)-median(sqrt.weight)))/sd(sqrt.weight)
+ln.weight=log(cars2$weightlbs) #Ntural logs
+ln.weight_skew=(3*(mean(ln.weight)-median(ln.weight)))/sd(ln.weight)
+invsqrt.weight=1/sqrt(cars2$weightlbs)  #Inverse square root
+invsqrt.weight_skew=(3*(mean(invsqrt.weight)-median(invsqrt.weight)))/sd(invsqrt.weight)
+```
+
+
+```{r}
+#Histogram with Normal Dstribution Overlay
+par(mfrow=c(1,1))
+x=rnorm(1000000,mean=mean(invsqrt.weight),sd=sd(invsqrt.weight))
+hist(invsqrt.weight,breaks=30,xlim=c(0.0125,0.0275),col="lightblue",prob=TRUE,border = "black",xlab="Inverse Square Root Of Weight",ylab="counts",maim="Histogram of Inverse Square Root Of Weight")
+box(which="plot",lty="solid",col="black")
+ # 0verlay with Normal density
+lines(density(x,col="red"))
+```
+
+```{r}
+#Normal Q-Q Plot 
+qqnorm(invsqrt.weight,datax=TRUE,col="red",ylim=c(0.01,0.03),main="Normal Q-Q Plot Of Inverse Square Root Of Weight")
+qqline(invsqrt.weight,col="blue",dataX=TRUE)
+```
+
+```{r}
+# Detransformation of data
+# Trnaform x using 1/sqrt(x)
+x=cars2$weightlbs[1]
+y=1/sqrt(x)
+# Detransform x using x=1/(y)^2
+detransformedx=1/y^2
+x;y;detransformedx
+
+
+```
+
+
+
+
+
