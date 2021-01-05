@@ -1,0 +1,42 @@
+---
+title: "Preparing to Model the Data"
+author: "Shadab Alam"
+date: "1/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Read in the data,partition Training and Testing data
+adult=read_csv("C:/Users/shada/Downloads/DMPA_data_sets/Data sets/adult/Clem3Training")
+head(adult)
+choose=runif(length(adult$income),min=0,max=1)
+training=adult[choose<=.75,]
+testing=adult[choose>.75,]
+adult[1:5,c(1,2,3)]
+training[1:5,c(1,2,3)]
+testing[1:5,c(1,2,3)]
+ #
+```
+
+```{r}
+#Remove the target variable,income,from the testing data
+names(testing)
+#Target variable is in Coloumn 15
+testing=testing[,-15]
+names(testing)
+#Target variable is no longer in the testing data
+```
+
+```{r}
+names(training)
+training=training[,-15]
+names(training)
+
+```
+
+
+
