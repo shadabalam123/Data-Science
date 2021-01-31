@@ -1,0 +1,197 @@
+---
+title: "Simple linear regression"
+author: "Shadab Alam"
+date: "1/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+cereals <- read.csv("C:/Users/shada/Downloads/DMPA_data_sets/Data sets/cereals.CSV", stringsAsFactors=TRUE)
+#save Sugars and Ratings as new variables
+sugars=cereals$Sugars
+rating=cereals$Rating
+which(is.na(sugars)) #Record 58 is missing
+sugars=na.omit(sugars) #Record 58 is missing 
+rating=rating[-58] #Delete Record 58 frm Rating to match
+```
+
+```{r}
+# Run Regression analysis
+lm1=lm(rating~sugars)
+lm1
+# Display summaries
+summary(lm1)
+anova(lm1)
+# Plot data with regression line  
+plot(sugars,rating,main="Cereal Rating by Sugar Content",xlab="Sugar Content",ylab="Rating",pch=16,col="blue")
+abline(lm1,col="black")
+```
+
+```{r}
+#Residuals, r^2,standardized residuals,leverage
+lm1$residuals# All residuals 
+lm1$residuals[12] # Residuals of Cheeros,Record 12
+a1=anova(lm1)
+#Calcualte r^2
+r2.1=a1$`Sum Sq`[1]/(a1$`Sum Sq`[1]+a1$`Sum Sq`[2])
+r2.1
+std.res1=rstandard(lm1) # Standardized resdiuals
+lev=hatvalues(lm1) #Leverage
+```
+
+```{r}
+#Orienteering Example
+#Input the data
+x=c(2,2,3,4,4,5,6,7,8,9)
+y=c(10,11,12,13,14,15,20,18,22,25)
+o.data=data.frame(cbind("Time"=x,"Distance"=y))
+lm2=lm(Distance~Time,data = o.data)
+a2=anova(lm2)
+a2
+#Directly calculate r^2
+r2.2=a2$`Sum Sq`[1]/(a2$`Sum Sq`[1]+a2$`Sum Sq`[2])
+r2.2
+# Calculate MSE
+mse=a2$`Mean Sq`[2]
+mse
+s=sqrt(mse) # Standard error of Estimate which says how accurate is the model
+s
+#std dev of Y
+sd(o.data$Distance)
+r=sign(lm2$coefficients[2])*sqrt(r2.2)# correlation coefficient
+```
+
+```{r}
+#Regression using other hikers
+# Hard-core hiker
+hardcore=cbind("Time"=16,"Distance"=39)
+o.data=rbind(o.data,hardcore)
+lm3=lm(Distance~Time,data=o.data)
+lm3
+summary(lm3)
+anova(lm3)
+#Leverage of all the observation in that variable 
+hatvalues(lm3)
+# For a given point in the coordinate axis to be outlier,its standardized residual value  must exceed the value of 2.Here in the below function the point (16,39) gives standardized value of 0.46801423 which is clearly less than 2.Hence the given is not an outlier 
+rstandard(lm3) #Standardized resdiual
+cooks.distance(lm3) # Calculation of cooks distance of each point
+#In the above calculation of cooks distance,the cooks distance of point (16,39) is 0.2564 which is less than the rule of thumb i.e 1.Hence this point is not influential
+#Now we are inserting point (5hour,20km)
+o.data[11,]=cbind("Time"=5,"Distance"=20)
+lm4=lm(Distance~Time,data=o.data)
+lm4
+summary(lm4)
+anova(lm4)
+rstandard(lm4) #Standardised residual
+hatvalues(lm4) #Calculating leverage value
+cooks.distance(lm4) #Cooks distance for the point(5,20) is 0.246575342 which is less than 1(our rough rule of thumb) or below the 25 percentile of the F distribution.Hence the given point doesnot affect the slope in substantial manner,thereby not influential
+#Now we are inserting new point again which is 10hour,23km
+o.data[11,]=cbind("Time"=10,"Distance"=23)
+lm5=lm(Distance~Time,o.data)
+summary(lm5)
+anova(lm5)
+hatvalues(lm5)# Leverage of this point is greater than 0.36 or 0.55 which is calculated using (2m+1/n)  or  (3m+1/n) respectively.
+rstandard(lm5) #Since the standardised value is negative ,Hence less than 2,thereby not an outlier
+cooks.distance(lm5)# cooks distance of the given point is 0.8214572 which lies in line with 62nd percentile of F distribution fulfilling our rough rule of thumb.Hence this point is influential.
+
+```
+
+```{r}
+# T-test
+```
+
+
+```{r}
+summary(lm1) #t-test in the sugar row with df=76-2=74.since p value is close to 0,so we can reject our null hypothesis.Hence we can say that the pvalue is signifcant enough to reject our null hypothesis i.e b1=0.
+
+```
+
+```{r}
+# CI for Beta Coefficients
+confint(lm1,level = 0.95)
+
+```
+
+```{r}
+#Regression for carbohydrates and Natural Log of Rating
+carbs=cereals$"Carbo"[-58]
+#Install package "nortest" in order to run Anderson Darling Test to verify the normality of any variable .
+library(nortest)
+ad.test(rating)#since the p value is very less than 0.15,so we have solid evidence to reject our null hypothesis i.e. is normal distribution better fits the data
+#Now using log of rating in order to transform it to check again the normality of rating using AD-Test
+lnrating=log(rating)#Transformed rating
+ad.test(lnrating)#Checking the normality of variable lnrating.After testing  we find that p value is greater than 0.15.So we have no evidence against our null hypothesis,i.e,normal distribution better fits the data
+ad.test(carbs) #Checking the normality of variable lnrating.Since p value is less than 0.15 ,but through table of p value,we find that ,we have mild evidence against our null hypothesis i.e,normal distribution better fits the data.Hence it is barely acceptable.
+lm6=lm(lnrating~carbs)
+summary(lm6)
+a6=anova(lm6)
+a6
+#After running the linear regression,we find that the p value during the estimation of slope is 0.174 which is greater than 0.15 from the p value table.Hence we have no evidence against our null hypothesis,i.e. b1=0.Hence they are are not linearly dependent.
+
+```
+
+```{r}
+# CI for r(correlation coefficient)
+alpha=0.05
+n=length(lnrating)
+r2.6=a6$`Sum Sq`[1]/(a6$`Sum Sq`[1]+a6$`Sum Sq`[2])
+r=sign(lm6$coefficients[2])*sqrt(r2.6)
+sr=sqrt((1-r^2)/(n-2))
+lb=r-qt(p=alpha/2,df=n-2,lower.tail = FALSE)*sr
+ub=r+qt(p=alpha/2,df=n-2,lower.tail = FALSE)*sr
+lb
+ub
+#After calculating the confidence interval we find that the correlation coefficient i.e. r also contain 0 in the confidence interval ,indicating that slope  becomes 0 during standardization of variable ,thereby we can say that the variables are not linearly dependent with each other
+ 
+```
+
+```{r}
+# Confidence and prediction Intervals
+new.data=data.frame(cbind(Distance=5,Time=5))
+Conf.int=predict(lm2,new.data,interval = "confidence")
+pred.int=predict(lm2,new.data,interval = "prediction")
+Conf.int
+pred.int
+
+```
+
+```{r}
+#Assess NORMALITY in scrabble example
+# Scrabble data
+s.freq=c(9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1)
+s.point=c(1,3,3,2,1,4,2,4,1,8,5,1,3,1,1,3,10,1,1,1,1,4,4,8,4,10)
+scrabble=data.frame("Frequency"=s.freq,"Points"=s.point)
+plot(scrabble,main="Scrabble points vs Frequency",xlab="Frequency",ylab ="Points",col="red",pch=16,xlim=c(0,13),ylim=c(0,10) )
+#Here the graphs indicates that the variables donot follow linear pattern between each other.So for our graph to show linear pattern,we must do square root of scrabble object using(LADDER OF RE-EXPRESSION concept) by MOSTELLER AND TUKEY which says the present position of all transformed variables is t^1.This concept is based on BULGING RULE which says that we apply either the square root transformations to both s.freq and s.point variable in order to achieve a linear relationship between the two variables.
+sq.scrabble=sqrt(scrabble)
+plot(sq.scrabble,main=" Square Root of Scrabble points vs Frequency",xlab=" Sqrt Frequency",ylab =" Sqrt Points",col="red",pch=16)
+ln.scrabble=log(scrabble)
+plot(ln.scrabble,main="Natural Log of scrabble Points vs Frequency",xlab=" Ln Frequency",ylab ="Ln Points",col="red",pch=16)
+
+```
+
+```{r}
+# Run regression on scrable data,transformed and untransformed
+lm7=lm(Points~Frequency,data=ln.scrabble)
+summary(lm7)
+anova(lm7)
+rstandard(lm7)
+#since the p value is very small in the anova table of lm7,indicating very strong evidence against our null hypothesis,i.e. Frequency and points are not linearly related
+lm8=lm(Points~Frequency,data=scrabble)
+summary(lm8)
+anova(lm8)
+#since the p value is very small in the anova table of lm8,indicating very strong evidence against our null hypothesis,i.e. Frequency and points are linearly related
+```
+
+```{r}
+#Box-Cox Transformation
+#Requires MASS package
+library(MASS)
+box_cox=boxcox(lm8)#
+```
+
