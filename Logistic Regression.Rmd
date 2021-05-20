@@ -1,0 +1,174 @@
+---
+title: "Logistic Regression"
+author: "Shadab Alam"
+date: "3/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pateints=data.frame(age=c(25,29,30,31,32,41,41,42,44,49,50,59,60,62,68,72,79,80,81,84),
+                    disease=c(0,0,0,0,0,0,0,0,1,1,0,1,0,0,1,0,1,0,1,1)) # Data is taken from the page 360 from the book.
+lm1=lm(disease~age,data=pateints)
+lr1=glm(disease~age,data = pateints,family=binomial)
+plot(pateints$age,pateints$disease,xlab="Age",ylab="Disease",main="Disease vs Age",xlim=c(20,90),pch=16)
+abline(lm1,lty=3)
+curve(predict(lr1,data.frame(age=x),type="resp"),add=TRUE,lwd=2)
+legend("topleft",legend=c("LS","LOG."),lty = c(3,1),cex=.9)
+```
+
+```{r}
+with(lr1,null.deviance-deviance)
+with(lr1,df.null-df.residual)
+with(lr1,pchisq(null.deviance-deviance,df.null-df.residual,lower.tail = FALSE))
+
+```
+
+```{r}
+# Make predictions
+newd=with(pateints,data.frame(age=c(50,72)))
+predict.glm(lr1,newdata=newd) #estimated logit
+predict.glm(lr1,newdata=newd,type="resp") #Probability of having the disease
+```
+
+```{r}
+#Odds ratio
+round(exp(coef(lr1)),3) #we know that for dichotomous variable odd ratio is e^(slope of the logistic regression curve)
+```
+
+
+```{r}
+# Dichotomous example
+churn=read.csv("C:/Users/shada/Desktop/DMPA_data_sets/Data sets/churn.txt",stringsAsFactors = TRUE)
+table(churn$Churn.,churn$VMail.Plan)
+churn$VMP.ind=ifelse(churn$VMail.Plan=="yes",1,0)
+lr2=glm(Churn.~VMP.ind,data=churn,family="binomial")
+summary(lr2)
+
+```
+
+```{r}
+# Dichotomous example:Odds Ratios and predictions
+# Odds Ratio
+round(exp(coef(lr2)),3)
+# Make predictions
+newd=with(churn,data.frame(VMP.ind=c(0,1)))
+predict.glm(lr2,newdata=newd)
+predict.glm(lr2,newdata=newd,type="resp")
+
+```
+
+
+```{r}
+# Polychotomous data
+# Redefine Customer service
+# Calls
+churn$CSC=factor(churn$CustServ.Calls)
+levels(churn$CSC)
+levels(churn$CSC)[1:2]="Low"
+levels(churn$CSC)[2:3]="Medium"
+levels(churn$CSC)[3:8]="High"
+churn$CSC_Med=ifelse(churn$CSC=="Medium",1,0)
+churn$CSC_Hi=ifelse(churn$CSC=="High",1,0)
+table(churn$Churn.,churn$CSC)
+lr3=glm(Churn.~CSC_Med+CSC_Hi,data=churn,family = "binomial")
+summary(lr3)
+
+```
+
+```{r}
+#continuous example
+lr4=glm(Churn.~Day.Mins,data=churn,family = "binomial")
+summary(lr4)
+```
+
+```{r}
+# Adult data example
+# Read in data using StringsasFactors=TRUE
+adult=read.csv("C:/Users/shada/Desktop/DMPA_data_sets/Data sets/adult/Clem3Training",stringsAsFactors = TRUE)
+adult$over50k=ifelse(adult$income==">50K.",1,0)
+adult$"capnet"=adult$capital.gain-adult$capital.loss
+lr5=glm(over50k~capnet,data=adult,family = "binomial")
+summary(lr5)
+```
+
+
+
+```{r}
+#Adult data example:categorize capnet
+adult$cap_lvl=factor(adult$capnet)
+levels(adult$cap_lvl)
+levels(adult$cap_lvl)[1:88]="Loss"
+levels(adult$cap_lvl)[2]="None"
+levels(adult$cap_lvl)[3:77]="Gain<$5000"
+levels(adult$cap_lvl)[4:44]="Gain>=$5000"
+adult$cap_loss=ifelse(adult$cap_lvl=="Loss",1,0)
+adult$cap_5K=ifelse(adult$cap_lvl=="Gain<$5000",1,0)
+adult$cap_ge5k=ifelse(adult$cap_lvl=="Gain>=$5000",1,0)
+```
+
+
+```{r}
+# Adult data example:Categorize capnet
+lr6=glm(over50k~cap_loss+cap_5K+cap_ge5k,data=adult,family ="binomial")
+summary(lr6)
+
+
+```
+
+```{r}
+# Multiple Logistic Regression
+churn$IntlP.ind=ifelse(churn$Int.l.Plan=="yes",1,0)
+churn$VMP.ind=ifelse(churn$VMail.Plan=="yes",1,0)
+lr7=glm(Churn.~IntlP.ind+CSC_Hi+Day.Mins+Eve.Mins+Night.Mins+Intl.Mins,data=churn,family="binomial")
+summary(lr7)
+```
+
+
+```{r}
+# Higher order terms
+adult$age.sq=adult$age^2
+lr8=glm(over50k~age+age.sq,data=adult,family = "binomial")
+summary(lr8)
+```
+
+
+```{r}
+# Validating the model: Preparing the data
+# Prepare the data
+levels(adult$marital.status)
+levels(adult$marital.status)[2:4]="Married"
+levels(adult$marital.status)
+adult$ms.married=ifelse(adult$marital.status=="Married",1,0)
+adult$ms.neverm=ifelse(adult$marital.status=="Never-married",1,0)
+adult$ms.sep=ifelse(adult$marital.status=="Separated",1,0)
+adult$ms.widowed=ifelse(adult$marital.status=="Widowed",1,0)
+adult$capnet=adult$capital.gain-adult$capital.loss
+levels(adult$sex)
+adult$male=ifelse(adult$sex=="Male",1,0)
+# Create hold-out sample
+hold=runif(dim(adult)[1],0,1)
+trainA=adult[which(hold<.5),]
+trainB=adult[which(hold>=.5),]
+dim(trainA)
+dim(trainB)
+```
+
+
+```{r}
+# Validating the model:Run the models
+lr11A=glm(over50k~age+education.num+ms.married+ms.neverm+ms.sep+ms.widowed+male+hours.per.week+capnet,data=trainA,family = "binomial")
+lr11B=glm(over50k~age+education.num+ms.married+ms.neverm+ms.sep+ms.widowed+male+hours.per.week+capnet,data=trainB,family = "binomial")
+summary(lr11A)
+summary(lr11B)
+```
+
+
+
+
+
+
+
