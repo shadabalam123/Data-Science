@@ -1,0 +1,101 @@
+---
+title: "K-nearest neighbor algorithm"
+author: "Shadab Alam"
+date: "2/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Creating a data set using Table 10.3 given in the book Data Mining and Predictive aalytics by Chantal T Larose and Daniel T Larose.
+new=c(0.05,0.25)
+A=c(0.0467,0.2471)
+B=c(0.0533,0.1912)
+C=c(0.0917,0.2794)
+data=rbind(A,B,C)
+dimnames(data)=list(c("Dark","Medium","Light"),c("Age(MMN)","Na/K(MMN)"))
+data
+```
+
+```{r}
+# Declare true calssification of A,B and C.
+trueclass=c("Dark","Medium","Light")
+```
+
+```{r}
+#Run KNN
+#Requires package "class"
+library(class)
+knn=knn(data,new,cl=trueclass,k=3,prob=TRUE)
+knn#
+```
+
+```{r}
+#Requires package "fields" to calculate the Euclidean Distance
+library(fields)
+together=rbind(new,data);together
+# The top row has the distances from New
+rdist(together) # Function rdist is used here to calculate the Euclidean Distance
+
+```
+
+```{r}
+# Stretch the axes
+ds_newA=sqrt((new[1]-A[1])^2+(3*(new[2]-A[2]))^2)
+ds_newB=sqrt((new[1]-B[1])^2+(3*(new[2]-B[2]))^2)
+ds_newC=sqrt((new[1]-B[1])^2+(3*(new[2]-C[2]))^2)
+# In the above modification we have used cross validation and Expert knowledge to find which of the variable is more important and how many times than other so that we can stretch that variable while finding Eulidean Distance.
+```
+
+```{r}
+# Table 10.4
+distance=c(ds_newA,ds_newB,ds_newC)
+BP=c(120,122,130)
+data=cbind(BP,data,distance)
+data
+
+```
+
+```{r}
+# Locally weighted averaging
+weights=(1/(distance^2))
+weights
+sum_wi=sum(weights)
+sum_wi
+sum_wiyi=sum(weights*data[,1])
+yhat_new=sum_wiyi/sum_wi
+yhat_new
+# In the above programming we tried to predict the unknown value of BP based on the given value of BP.Before this we were classifying new records using k nearest neighbor algorithm.In the above coding we have not only classified but also predicted using KNN algorithm. This is one of the best features of Knn algorithm in Classification methodology
+
+```
+
+```{r}
+# Classify Risk example:Prep the data
+# Read in the the classify Risk dataset
+risk <- read.csv("C:/Users/shada/Downloads/DMPA_data_sets/Data sets/ClassifyRisk")
+summary(risk)
+# Table 10.5 contains Records 19,51,65,79,87,124,141,150,162,163
+risk2=risk[c(19,51,65,79,87,124,141,150,162),c(3,4,5,6)]
+risk2
+risk2$married.I=ifelse(risk2$marital_status=="married",1,0)
+risk2$single.I=ifelse(risk2$marital_status=="single",1,0)
+risk2
+risk2=risk2[,-2]
+risk2
+new2=risk[163,c(3,4,5)]
+new2$married.I=1
+new2$single.I=0
+new2=new2[,-2]
+cll=c(risk2[,3])
+
+```
+
+```{r}
+knn2=knn(train=risk2[,c(1,2,4,5)],test=new2,cl=cll,k=3)
+knn2
+
+```
+
